@@ -1,90 +1,218 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Email Validation</title>
 
-    <style>
+<title>Email → IP → Location Flow</title>
 
-        body {
-            background-color: #f2f2f2;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding-top: 100px;
-        }
+<style>
 
-        h2 {
-            color: #333;
-        }
+body {
+    font-family: Arial;
+    text-align: center;
+    background: #f2f2f2;
+    padding-top: 40px;
+}
 
-        input {
-            width: 250px;
-            padding: 10px;
-            font-size: 16px;
-            border: 2px solid #007BFF;
-            border-radius: 5px;
-        }
+input {
+    padding: 10px;
+    width: 250px;
+    border: 2px solid #007BFF;
+    border-radius: 5px;
+}
 
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-left: 10px;
-        }
+button {
+    padding: 10px 20px;
+    margin-top: 10px;
+    background: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+}
 
-        button:hover {
-            background-color: #0056b3;
-        }
+section {
+    display: none;
+    margin-top: 25px;
+}
 
-        #result {
-            margin-top: 20px;
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-    </style>
+</style>
 
 </head>
 
 <body>
 
-    <h2>Email Validation Form</h2>
+<!-- EMAIL -->
+<h2>Email Validation</h2>
 
-    <input type="text" id="email" placeholder="Enter Email">
-    
-    <button onclick="validateEmail()">Check</button>
+<input id="email" placeholder="Enter Email">
 
-    <p id="result"></p>
+<br>
 
-    <script>
+<button onclick="validateEmail()">Validate Email</button>
+<button onclick="goIP()">Next</button>
 
-        function validateEmail() {
+<p id="msg1"></p>
 
-            let email = document.getElementById("email").value;
+<!-- IP -->
+<section id="ipSection">
 
-            let regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+<h2>IP Address Verification</h2>
 
-            if (regex.test(email)) {
+<button onclick="checkIP()">Check IP</button>
+<button onclick="goLocation()">Next</button>
 
-                document.getElementById("result").innerHTML =
-                "Valid Email Address";
+<p id="msg2"></p>
 
-                document.getElementById("result").style.color = "green";
-            }
+</section>
 
-            else {
+<!-- LOCATION -->
+<section id="locSection">
 
-                document.getElementById("result").innerHTML =
-                "Invalid Email Address";
+<h2>Location traced using IP address</h2>
 
-                document.getElementById("result").style.color = "red";
-            }
-        }
+<button onclick="getLocation()">Click here</button>
 
-    </script>
+<p id="msg3"></p>
+
+<button onclick="closeAll()">Close ✖</button>
+
+</section>
+
+<script>
+
+let emailOk = false;
+let ipOk = false;
+
+// EMAIL VALIDATION
+function validateEmail() {
+
+    let email = document.getElementById("email").value;
+
+    let regex =
+    /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+    if(regex.test(email)) {
+
+        emailOk = true;
+
+        document.getElementById("msg1").innerHTML =
+        "Valid Email";
+
+        document.getElementById("msg1").style.color =
+        "green";
+
+    } else {
+
+        emailOk = false;
+
+        document.getElementById("msg1").innerHTML =
+        "Invalid Email - BLOCKED ❌";
+
+        document.getElementById("msg1").style.color =
+        "red";
+    }
+}
+
+// NEXT AFTER EMAIL
+function goIP() {
+
+    if(emailOk) {
+
+        document.getElementById("ipSection").style.display =
+        "block";
+
+    } else {
+
+        alert("❌ Email invalid. Access blocked.");
+    }
+}
+
+// IP CHECK
+async function checkIP() {
+
+    if(!emailOk) {
+        alert("❌ Email not valid. IP blocked.");
+        return;
+    }
+
+    let res =
+    await fetch("https://api.ipify.org?format=json");
+
+    let data = await res.json();
+
+    let ip = data.ip;
+
+    let regex =
+    /^(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])){3}$/;
+
+    if(regex.test(ip)) {
+
+        ipOk = true;
+
+        document.getElementById("msg2").innerHTML =
+        "Valid IP: " + ip;
+
+        document.getElementById("msg2").style.color =
+        "green";
+
+    } else {
+
+        ipOk = false;
+
+        document.getElementById("msg2").innerHTML =
+        "Invalid IP - BLOCKED ❌";
+
+        document.getElementById("msg2").style.color =
+        "red";
+    }
+}
+
+// NEXT TO LOCATION
+function goLocation() {
+
+    if(ipOk) {
+
+        document.getElementById("locSection").style.display =
+        "block";
+
+    } else {
+
+        alert("❌ IP invalid. Cannot proceed.");
+    }
+}
+
+// LOCATION TRACE
+function getLocation() {
+
+    fetch("https://ipapi.co/json/")
+    .then(res => res.json())
+    .then(data => {
+
+        document.getElementById("msg3").innerHTML =
+        "City: " + data.city +
+        "<br>Country: " + data.country_name +
+        "<br>IP: " + data.ip;
+
+    });
+
+}
+
+// CLOSE
+function closeAll() {
+
+    document.getElementById("ipSection").style.display = "none";
+    document.getElementById("locSection").style.display = "none";
+
+    document.getElementById("email").value = "";
+
+    document.getElementById("msg1").innerHTML = "";
+    document.getElementById("msg2").innerHTML = "";
+    document.getElementById("msg3").innerHTML = "";
+
+    emailOk = false;
+    ipOk = false;
+}
+
+</script>
 
 </body>
 </html>
