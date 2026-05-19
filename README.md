@@ -2,7 +2,7 @@
 <html>
 <head>
 
-<title>Email → IP → Location Flow</title>
+<title>Final Verification System</title>
 
 <style>
 
@@ -27,6 +27,7 @@ button {
     color: white;
     border: none;
     border-radius: 5px;
+    cursor: pointer;
 }
 
 section {
@@ -40,7 +41,6 @@ section {
 
 <body>
 
-<!-- EMAIL -->
 <h2>Email Validation</h2>
 
 <input id="email" placeholder="Enter Email">
@@ -52,7 +52,7 @@ section {
 
 <p id="msg1"></p>
 
-<!-- IP -->
+<!-- IP SECTION -->
 <section id="ipSection">
 
 <h2>IP Address Verification</h2>
@@ -64,14 +64,14 @@ section {
 
 </section>
 
-<!-- LOCATION -->
+<!-- LOCATION SECTION -->
 <section id="locSection">
 
 <h2>Location traced using IP address</h2>
 
-<button onclick="getLocation()">Click here</button>
+<button onclick="getRealLocation()">Click Here</button>
 
-<p id="msg3"></p>
+<p id="loc"></p>
 
 <button onclick="closeAll()">Close ✖</button>
 
@@ -82,7 +82,7 @@ section {
 let emailOk = false;
 let ipOk = false;
 
-// EMAIL VALIDATION
+/* ---------------- EMAIL ---------------- */
 function validateEmail() {
 
     let email = document.getElementById("email").value;
@@ -95,7 +95,7 @@ function validateEmail() {
         emailOk = true;
 
         document.getElementById("msg1").innerHTML =
-        "Valid Email";
+        "✔ Valid Email";
 
         document.getElementById("msg1").style.color =
         "green";
@@ -105,14 +105,14 @@ function validateEmail() {
         emailOk = false;
 
         document.getElementById("msg1").innerHTML =
-        "Invalid Email - BLOCKED ❌";
+        "❌ Invalid Email - BLOCKED";
 
         document.getElementById("msg1").style.color =
         "red";
     }
 }
 
-// NEXT AFTER EMAIL
+/* ---------------- NEXT TO IP ---------------- */
 function goIP() {
 
     if(emailOk) {
@@ -122,51 +122,59 @@ function goIP() {
 
     } else {
 
-        alert("❌ Email invalid. Access blocked.");
+        alert("❌ Email invalid. Cannot proceed.");
     }
 }
 
-// IP CHECK
+/* ---------------- IP CHECK ---------------- */
 async function checkIP() {
 
     if(!emailOk) {
-        alert("❌ Email not valid. IP blocked.");
+        alert("❌ Email blocked. IP not allowed.");
         return;
     }
 
-    let res =
-    await fetch("https://api.ipify.org?format=json");
+    try {
 
-    let data = await res.json();
+        let res =
+        await fetch("https://api.ipify.org?format=json");
 
-    let ip = data.ip;
+        let data = await res.json();
 
-    let regex =
-    /^(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])){3}$/;
+        let ip = data.ip;
 
-    if(regex.test(ip)) {
+        let regex =
+        /^(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])){3}$/;
 
-        ipOk = true;
+        if(regex.test(ip)) {
+
+            ipOk = true;
+
+            document.getElementById("msg2").innerHTML =
+            "✔ Valid IP: " + ip;
+
+            document.getElementById("msg2").style.color =
+            "green";
+
+        } else {
+
+            ipOk = false;
+
+            document.getElementById("msg2").innerHTML =
+            "❌ Invalid IP";
+
+            document.getElementById("msg2").style.color =
+            "red";
+        }
+
+    } catch (e) {
 
         document.getElementById("msg2").innerHTML =
-        "Valid IP: " + ip;
-
-        document.getElementById("msg2").style.color =
-        "green";
-
-    } else {
-
-        ipOk = false;
-
-        document.getElementById("msg2").innerHTML =
-        "Invalid IP - BLOCKED ❌";
-
-        document.getElementById("msg2").style.color =
-        "red";
+        "❌ Error fetching IP";
     }
 }
 
-// NEXT TO LOCATION
+/* ---------------- NEXT TO LOCATION ---------------- */
 function goLocation() {
 
     if(ipOk) {
@@ -180,23 +188,58 @@ function goLocation() {
     }
 }
 
-// LOCATION TRACE
-function getLocation() {
+/* ---------------- GPS LOCATION ---------------- */
+function getRealLocation() {
 
-    fetch("https://ipapi.co/json/")
-    .then(res => res.json())
-    .then(data => {
+    if (navigator.geolocation) {
 
-        document.getElementById("msg3").innerHTML =
-        "City: " + data.city +
-        "<br>Country: " + data.country_name +
-        "<br>IP: " + data.ip;
+        navigator.geolocation.getCurrentPosition(
 
-    });
+            function(position) {
 
+                let lat = position.coords.latitude;
+                let lon = position.coords.longitude;
+                let acc = position.coords.accuracy;
+
+                document.getElementById("loc").innerHTML =
+                "Latitude: " + lat +
+                "<br>Longitude: " + lon +
+                "<br>Accuracy: " + acc + " meters";
+            },
+
+            function(error) {
+
+                if (error.code === 1) {
+                    document.getElementById("loc").innerHTML =
+                    "❌ Location permission blocked";
+                }
+
+                else if (error.code === 2) {
+                    document.getElementById("loc").innerHTML =
+                    "❌ Location unavailable";
+                }
+
+                else if (error.code === 3) {
+                    document.getElementById("loc").innerHTML =
+                    "❌ Request timeout";
+                }
+
+                else {
+                    document.getElementById("loc").innerHTML =
+                    "❌ Unknown error";
+                }
+            }
+
+        );
+
+    } else {
+
+        document.getElementById("loc").innerHTML =
+        "❌ Geolocation not supported";
+    }
 }
 
-// CLOSE
+/* ---------------- CLOSE ---------------- */
 function closeAll() {
 
     document.getElementById("ipSection").style.display = "none";
@@ -206,7 +249,7 @@ function closeAll() {
 
     document.getElementById("msg1").innerHTML = "";
     document.getElementById("msg2").innerHTML = "";
-    document.getElementById("msg3").innerHTML = "";
+    document.getElementById("loc").innerHTML = "";
 
     emailOk = false;
     ipOk = false;
